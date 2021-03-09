@@ -17,6 +17,7 @@ public:
 
     bool            Possible( uint8_t i ) const { if( i > 0 && i <= 9 ) return BitSet[i-1]; else return false; };
     void            RemovePossible( uint8_t i ) { if( i > 0 && i <= 9 ) BitSet.reset(i-1); };
+    void            AddPossible( uint8_t i ) { if( i > 0 && i <= 9 ) BitSet.set(i-1); };
     void            SetSolution( uint8_t i ) { BitSet.reset(); if( i > 0 && i <= 9 ) BitSet.set(i-1); };
     
     uint8_t         FirstPossible() const { for( uint8_t i = 0 ; i < 9 ; i++ ) if( BitSet[i] ) return i+1; return 255; };

@@ -1,3 +1,5 @@
+#include "Utility.h"
+
 #include "SudokuState.h"
 
 void SudokuState::GenerateFromString( String str )
@@ -101,17 +103,17 @@ bool SudokuState::SolveByGuessing()
         return false;
     bool bAnyChangeMade = false;
     auto point = FindLowestCountUnsolvedSquare();
-    if( point.first == -1 )
+    if( point.x == -1 )
         return false;
     auto oldState = Squares;
-    SudokuSquare oldSquare = Squares[point.first][point.second];
-    log_d("Attempting to fix (%d,%d)[%s]",point.first,point.second,oldSquare.AsPossibleString());
+    SudokuSquare oldSquare = Squares[point.x][point.y];
+    log_d("Attempting to fix (%d,%d)[%s]",point.x,point.y,oldSquare.AsPossibleString());
     for( uint8_t val = 1 ; val <= 9 ; val++ )
     {
-        if( Squares[point.first][point.second].Possible(val) )
+        if( Squares[point.x][point.y].Possible(val) )
         {
             log_d("Trying %d",val);
-            Squares[point.first][point.second].SetSolution(val);
+            Squares[point.x][point.y].SetSolution(val);
             Propagate();
             if( Solved() )
                 return true;
@@ -194,14 +196,14 @@ uint16_t SudokuState::SumCount() const
     return count;
 }
 
-std::pair<uint8_t,uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
+Point<uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
 {
     if( !Valid() )
         return {-1,-1};
     if( Solved() )
         return {-1,-1};
 
-    std::pair<uint8_t,uint8_t> point;
+    Point<uint8_t> point;
     uint8_t count = 10;
     for( uint8_t x = 0 ; x < 9 ; x++ )
         for( uint8_t y = 0 ; y < 9 ; y++ )

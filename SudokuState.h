@@ -26,7 +26,10 @@ public:
     bool            Solved() const;
     uint16_t        SumCount() const;
 
-    std::pair<uint8_t,uint8_t>  FindLowestCountUnsolvedSquare() const;
+    Point<uint8_t>  FindLowestCountUnsolvedSquare() const;
+
+    SudokuSquare&   GetSquare( Point<uint8_t> pt ) { return GetSquare(pt.x,pt.y); };
+    SudokuSquare&   GetSquare( uint8_t x, uint8_t y ) { return Squares[x][y]; };
 
     void            Dump() const;
 
