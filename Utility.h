@@ -53,6 +53,10 @@ template<class T> struct Rect {
   {
       return {left+x,top+y,right-2*x,bottom-2*y};
   }
+  Rect<T>   add( const Point<T>& pt )
+  {
+      return {left+pt.x,top+pt.y,right+pt.x,bottom+pt.y};
+  }
   bool      contains( const Point<T>& pt ) const
   {
       return left <= pt.x && pt.x <= right && top <= pt.y && pt.y <= bottom;

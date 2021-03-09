@@ -33,7 +33,7 @@ public:
 
     String          AsPossibleString() const 
     {
-        String ret;
+        String ret = "";
         for( uint8_t i = 1 ; i <= 9 ; i++ )
             if( Possible(i) )
                 ret += String(i);

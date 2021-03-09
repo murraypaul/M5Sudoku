@@ -17,7 +17,7 @@ struct DisplayManager
 
         eSingleSquare,
 
-        eSettings
+        eNewGame
     };
 
 protected:
@@ -37,7 +37,7 @@ public:
     void Init( bool appInit = false );
     void SetLayout( eLayout );
 
-    void draw();
+    void draw( bool bFullRedraw = false );
     void redraw();
 
     M5EPD_Canvas&   GetCanvas();
@@ -57,7 +57,7 @@ public:
     void HandleButtonR();
     void HandleSingleFinger( const Point<uint16_t>& hit );
 
-    void ShowSettingsMenu();
+    void ShowNewGameDialog();
 
     void doShutdownIfOnBattery();
     void doShutdown();

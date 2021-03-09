@@ -8,6 +8,7 @@ M5EPD_Canvas Canvas(&M5.EPD);
 
 SudokuState CurrentState;
 Point<uint8_t>  CurrentSquare;
+String      LastValidation = "";
 
 void setup() 
 {
@@ -31,6 +32,9 @@ void setup()
     log_d("Is Valid: %c", CurrentState.Valid()?'Y':'N');
     log_d("Is Solved: %c", CurrentState.Solved()?'Y':'N');
   }*/
+
+  SudokuState::CheckHasSave();
+  log_d("HasSave: %c", SudokuState::HasSave()?'Y':'N');
 
   BaseDisplayManager.draw();
 }

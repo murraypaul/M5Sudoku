@@ -6,8 +6,20 @@
 
 #include <Preferences.h>
 
+#include "SudokuState.h"
+
+extern SudokuState CurrentState;
+extern String LastValidation;
+
 Preferences preferences;
 const char* Preferences_App = "M5Sudoku";
+
+std::vector<uint8_t> vector_rand81(81);
+std::random_device rd_;
+std::mt19937 g_(rd_());
+
+uint8_t  TargetFixedCells = 24;
+uint32_t TargetSolveTimeMS = 60 * 1000;
 
 DisplayManager BaseDisplayManager;
 
@@ -33,6 +45,8 @@ void DisplayManager::Init( bool appInit )
         Rotation = preferences.getShort("Rotation",(int16_t)Rotation);
         preferences.end();
         log_d("Battery voltage: %d", M5.getBatteryVoltage());
+
+        std::iota(vector_rand81.begin(), vector_rand81.end(), 0);
     }
 
     SetLayout(CurrentLayout);
@@ -93,6 +107,182 @@ void DisplayManager::SetLayout( eLayout layout )
             LayoutItems.push_back( std::make_shared<LayoutItem_SudokuGrid>(
                 Rect<uint16_t>(offset + border,border,offset + width - border,width - border), true));
         }
+        {
+            uint16_t border = 18;
+            uint16_t width = (540 - border) * 2 / 3;
+            uint16_t offsetX = 540-2*border + (960-540-width)/2;
+            uint16_t offsetY = width;
+            uint16_t lineHeight = 56;
+            uint8_t itemCount = 0;
+            uint16_t itemBorder = 9;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "Validate"; }
+                , []() -> bool { return true; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([]()
+                {
+                    SudokuState temp = CurrentState;
+                    temp.Propagate();
+                    temp.SolveByGuessing();
+                    LastValidation = temp.Valid() ? "Valid" : "Invalid";
+                    BaseDisplayManager.draw(true);
+                })));
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX+1*width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return LastValidation; }
+                , []() -> bool { return false; } 
+                , nullptr));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "New Game"; }
+                , []() -> bool { return true; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]()
+                {
+                    this->ShowNewGameDialog();
+                })));
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return !CurrentState.Solved() ? "Clue" : ""; }
+                , []() -> bool { return !CurrentState.Solved() ? true : false; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([]()
+                {
+                    CurrentState.FixOneSquare();
+                    LastValidation = "";
+                    BaseDisplayManager.draw();
+                })));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "Save"; }
+                , []() -> bool { return true; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([]()
+                {
+                    CurrentState.Save();
+                    BaseDisplayManager.draw();
+                })));
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{width/2 - border,lineHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return SudokuState::HasSave() ? "Load" : ""; }
+                , []() -> bool { return SudokuState::HasSave() ? true : false; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([]()
+                {
+                    if( SudokuState::HasSave() )
+                    {
+                        CurrentState.Load();
+                        LastValidation = "";
+                        BaseDisplayManager.draw(true);
+                    }
+                })));
+
+        }
+        break;
+    case eLayout::eNewGame:
+        Rotation = 0 + (flip?180:0);
+        CanvasPos = {120,64};
+        CanvasSize = {960-120*2,540-64*2};
+        Rect<uint16_t> canvasRect{{0,0},CanvasSize};
+
+        clearCanvas = false;
+
+        LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect.shrinkBy({5,5})) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,32}),&FreeSansBold24pt7b,TC_DATUM,String("New Game"),nullptr) );
+
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,64+32}),&FreeSansBold12pt7b,TC_DATUM,String("Target Clues"),nullptr) );
+        {
+            uint16_t border = 32;
+            uint16_t width = CanvasSize.cx - border*2;
+            uint16_t offsetX = border;
+            uint16_t offsetY = 128+16;
+            uint16_t itemBorder = 32;
+            uint16_t itemWidth = (width - itemBorder*3)/4;
+            uint16_t itemHeight = 64;
+            uint16_t itemCount = 0;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "22"; }
+                , []() -> bool { return TargetFixedCells == 22; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 22; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "24"; }
+                , []() -> bool { return TargetFixedCells == 24; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 24; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "26"; }
+                , []() -> bool { return TargetFixedCells == 26; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 26; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "28"; }
+                , []() -> bool { return TargetFixedCells == 28; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 28; this->draw(); } )));
+        }
+
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,196+32}),&FreeSansBold12pt7b,TC_DATUM,String("Time to Find"),nullptr) );
+        {
+            uint16_t border = 32;
+            uint16_t width = CanvasSize.cx - border*2;
+            uint16_t offsetX = border;
+            uint16_t offsetY = 256+16;
+            uint16_t itemBorder = 32;
+            uint16_t itemWidth = (width - itemBorder*3)/4;
+            uint16_t itemHeight = 64;
+            uint16_t itemCount = 0;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "30s"; }
+                , []() -> bool { return TargetSolveTimeMS == 30*1000; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 30*1000; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "60s"; }
+                , []() -> bool { return TargetSolveTimeMS == 60*1000; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 60*1000; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "90s"; }
+                , []() -> bool { return TargetSolveTimeMS == 90*1000; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 90*1000; this->draw(); } )));
+            itemCount++;
+            LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                , &FreeSans12pt7b, CC_DATUM
+                , []() -> String { return "120s"; }
+                , []() -> bool { return TargetSolveTimeMS == 120*1000; } 
+                , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 120*1000; this->draw(); } )));
+        }
+
+        LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+            Rect<uint16_t>({CanvasSize.cx - 200,CanvasSize.cy-80},{180, 64})
+            , &FreeSans12pt7b, CC_DATUM
+            , []() -> String { return "Go"; }
+            , []() -> bool { true; } 
+            , std::make_shared<LayoutItemAction_StdFunction>([this]()
+            {
+                this->ShouldClose = true;
+            })));
+
         break;
     }
 
@@ -153,12 +343,11 @@ void DisplayManager::drawString( const GFXfont* font, uint8_t datum, String str,
     Canvas.drawString(str, x, y);
 }
 
-void DisplayManager::draw() 
+void DisplayManager::draw( bool bFullRedraw ) 
 {
     DesiredUpdateRect = Rect<uint16_t>{0,0,0,0};
     DesiredUpdateMode = UPDATE_MODE_NONE;
 
-    bool bFullRedraw = false;
     if( bFullRedraw )
         clearScreen();
 
@@ -332,41 +521,49 @@ void DisplayManager::HandleSingleFinger( const Point<uint16_t>& hitIn )
 {
     Point<uint16_t> hit = hitIn - CanvasPos;
 //    log_d("Converted hit from (%d,%d) to (%d,%d), canvas pos (%d,%d)"
-        , hitIn.x, hitIn.y, hit.x, hit.y, CanvasPos.x, CanvasPos.y );
+//        , hitIn.x, hitIn.y, hit.x, hit.y, CanvasPos.x, CanvasPos.y );
     for( auto& item : LayoutItems )
         if( item->hitTest(hit) )
             break;
 }
-/*
-void DisplayManager::ShowSettingsMenu()
-{
-    DisplayManager settingsManager;
-    settingsManager.Rotation = Rotation;
-    settingsManager.SetLayout(eLayout::eSettings);
 
-    settingsManager.redraw();
-    settingsManager.ShouldClose = false;
+/*
+
+*/
+
+void DisplayManager::ShowNewGameDialog()
+{
+    DisplayManager newGameDlg;
+    newGameDlg.Rotation = Rotation;
+    newGameDlg.SetLayout(eLayout::eNewGame);
+
+    newGameDlg.redraw();
+    newGameDlg.ShouldClose = false;
 
     PopupDialogActive = true;
-    while( !settingsManager.ShouldClose )
+    while( !newGameDlg.ShouldClose )
     {
-        settingsManager.doLoop(false);
+        newGameDlg.doLoop(false);
         delay(100);
 //        yield();
     }
 
-    preferences.begin(Preferences_App);
-    preferences.putChar("Layout",(int8_t)CurrentLayout);
-    preferences.putShort("Rotation",(int16_t)Rotation);
-    preferences.putShort("MaxJpeg",(int16_t)MaxPreferredImageSize);
-    preferences.end();
-    
-    settingsManager.clearScreen();
-    settingsManager.Canvas.pushCanvas(settingsManager.CanvasPos.x,settingsManager.CanvasPos.y,UPDATE_MODE_GC16);
+    newGameDlg.clearScreen();
+    newGameDlg.drawString(&FreeSans24pt7b,CC_DATUM,"Please wait...",Rect<uint16_t>({0,0},newGameDlg.CanvasSize));
+    newGameDlg.Canvas.pushCanvas(newGameDlg.CanvasPos.x,newGameDlg.CanvasPos.y,UPDATE_MODE_DU);
+
+    SudokuState temp;
+    temp.GenerateRandom(TargetFixedCells,TargetSolveTimeMS);
+    CurrentState = temp;
+    LastValidation = "";
+    SudokuState::RemoveSave();
+
     Canvas.pushCanvas(CanvasPos.x,CanvasPos.y,UPDATE_MODE_GC16);
     PopupDialogActive = false;
+
+    BaseDisplayManager.draw(true);
 }
-*/
+
 void DisplayManager::doShutdownIfOnBattery()
 {
     // Cannot tell for sure, guess

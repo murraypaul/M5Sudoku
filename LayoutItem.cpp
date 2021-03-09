@@ -18,7 +18,7 @@ LayoutItem::LayoutItem( Rect<uint16_t> rect, tdAction action )
 {
 }
 
-LayoutItemWithFont::LayoutItemWithFont( Rect<uint16_t> rect, const GFXfont* font, LayoutItemWithFont::eAlign align, tdAction action )
+LayoutItemWithFont::LayoutItemWithFont( Rect<uint16_t> rect, const GFXfont* font, uint8_t align, tdAction action )
 : LayoutItem(rect,action)
 , Font(font)
 , TextAlign(align)
@@ -45,18 +45,8 @@ bool LayoutItem::hitTest( const Point<uint16_t>& hit )
 
 void LayoutItemWithFont::drawString( DisplayManager& displayManager, String str )
 {
-    switch( TextAlign )
-    {
-        case eAlign::eLeft:
-            displayManager.drawString( Font, TL_DATUM, str, Location);
-            break;
-        case eAlign::eRight:
-            displayManager.drawString( Font, TR_DATUM, str, Location);
-            break;
-        case eAlign::eCentre:
-            displayManager.drawString( Font, TC_DATUM, str, Location);
-            break;
-    }
+    displayManager.fillRect(Location,0);
+    displayManager.drawString( Font, TextAlign, str, Location);
 }
 
 LayoutItem_ButtonIcon::LayoutItem_ButtonIcon( Rect<uint16_t> rect, const unsigned char* data, size_t size, tdAction action )
@@ -91,7 +81,7 @@ void LayoutItem_ButtonIconWithHighlight::draw( DisplayManager& displayManager )
     }
 }
 
-LayoutItem_StaticText::LayoutItem_StaticText( Rect<uint16_t> rect, const GFXfont* font, LayoutItemWithFont::eAlign align, String text, tdAction action )
+LayoutItem_StaticText::LayoutItem_StaticText( Rect<uint16_t> rect, const GFXfont* font, uint8_t align, String text, tdAction action )
 : LayoutItemWithFont(rect,font,align,action)
 , Text(text)
 {
@@ -105,6 +95,23 @@ void LayoutItem_Rectangle::draw( DisplayManager& displayManager )
 void LayoutItem_StaticText::draw( DisplayManager& displayManager )
 {
     drawString( displayManager, Text);
+}
+
+LayoutItem_DynamicText::LayoutItem_DynamicText( Rect<uint16_t> rect, const GFXfont* font, uint8_t align, tdStringFunc func, tdOutlineFunc outlineFunc, tdAction action )
+: LayoutItemWithFont(rect,font,align,action)
+, TextFunc(func)
+, OutlineFunc(outlineFunc)
+{
+
+}
+
+void LayoutItem_DynamicText::draw( DisplayManager& displayManager )
+{
+    displayManager.fillRect(Location, 0);
+    if( TextFunc )
+        drawString( displayManager, TextFunc() );
+    if( OutlineFunc && OutlineFunc() )
+        displayManager.drawRect(Location, 15);
 }
 
 LayoutItemAction_SudokuSquare::LayoutItemAction_SudokuSquare( uint8_t x, uint8_t y )

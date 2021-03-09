@@ -55,17 +55,12 @@ class LayoutItemWithFont : public LayoutItem
 {
 public:
     using tdAction = std::shared_ptr<LayoutItemAction>;
-    enum eAlign {
-        eLeft,
-        eRight,
-        eCentre
-    };
 
-    LayoutItemWithFont( Rect<uint16_t> rect, const GFXfont* font = nullptr, eAlign align = eAlign::eLeft, tdAction action = nullptr );
+    LayoutItemWithFont( Rect<uint16_t> rect, const GFXfont* font = nullptr, uint8_t align = TL_DATUM, tdAction action = nullptr );
     virtual ~LayoutItemWithFont() = default;
 
     const GFXfont*  Font = nullptr;
-    eAlign  TextAlign = eAlign::eLeft;
+    uint8_t  TextAlign = TL_DATUM;
 
     virtual void drawString( DisplayManager&, String str );
 };
@@ -99,9 +94,21 @@ class LayoutItem_Rectangle : public LayoutItem
 class LayoutItem_StaticText : public LayoutItemWithFont
 {
 public:
-    LayoutItem_StaticText( Rect<uint16_t> rect, const GFXfont* font, LayoutItemWithFont::eAlign align, String text, tdAction action = nullptr );
+    LayoutItem_StaticText( Rect<uint16_t> rect, const GFXfont* font, uint8_t align, String text, tdAction action = nullptr );
 
     String  Text;
+    virtual void draw( DisplayManager& ) override;
+};
+
+class LayoutItem_DynamicText : public LayoutItemWithFont
+{
+public:
+    using tdStringFunc = std::function<String(void)>;
+    using tdOutlineFunc = std::function<bool(void)>;
+    LayoutItem_DynamicText( Rect<uint16_t> rect, const GFXfont* font, uint8_t align, tdStringFunc textFunc, tdOutlineFunc outlineFunc = [](){return false;}, tdAction action = nullptr );
+
+    tdStringFunc    TextFunc;
+    tdOutlineFunc   OutlineFunc;
     virtual void draw( DisplayManager& ) override;
 };
 
