@@ -219,14 +219,14 @@ uint16_t SudokuState::SumCount() const
     return count;
 }
 
-Point<uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
+Point<signed char> SudokuState::FindLowestCountUnsolvedSquare() const
 {
     if( !Valid() )
         return {-1,-1};
     if( Solved() )
         return {-1,-1};
 
-    Point<uint8_t> point;
+    Point<signed char> point;
     uint8_t count = 10;
     for( uint8_t x = 0 ; x < 9 ; x++ )
         for( uint8_t y = 0 ; y < 9 ; y++ )
@@ -236,7 +236,7 @@ Point<uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
             if( squareCount > 1 && squareCount < count )
             {
                 count = squareCount;
-                point = {x,y};
+                point = {(signed char) x, (signed char) y};
                 if( count == 2 )
                     return point;
             }
