@@ -33,7 +33,7 @@ public:
     uint8_t         CountFixed() const;
     bool            CheckPossible(uint8_t x, uint8_t y, uint8_t val) const;
 
-    Point<uint8_t>  FindLowestCountUnsolvedSquare() const;
+    Point<signed char>  FindLowestCountUnsolvedSquare() const;
     void            FixOneSquare();
 
     SudokuSquare&   GetSquare( Point<uint8_t> pt ) { return GetSquare(pt.x,pt.y); };
