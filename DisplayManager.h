@@ -28,6 +28,7 @@ protected:
     eLayout  CurrentLayout = eBoard_Landscape;
     std::list<std::shared_ptr<LayoutItem>>    LayoutItems;
     bool ShouldClose = false;
+    bool Cancelled = false;
     bool PopupDialogActive = false;
     Rect<uint16_t>   DesiredUpdateRect{0,0,0,0};
     m5epd_update_mode_t     DesiredUpdateMode = UPDATE_MODE_NONE;

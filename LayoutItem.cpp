@@ -10,6 +10,8 @@
 extern SudokuState CurrentState;
 extern Point<uint8_t> CurrentSquare;
 
+extern String LastValidation;
+
 bool drawIcon( M5EPD_Canvas& canvas, const unsigned char* bmpFS, size_t size, uint16_t x, uint16_t y );
 
 LayoutItem::LayoutItem( Rect<uint16_t> rect, tdAction action )
@@ -172,6 +174,7 @@ void LayoutItemAction_SudokuSubSquare::doAction()
         CurrentState.GetSquare(CurrentSquare).RemovePossible(WhichValue);
     else
         CurrentState.GetSquare(CurrentSquare).AddPossible(WhichValue);
+    LastValidation = "";
     BaseDisplayManager.draw();
 }
 
@@ -183,6 +186,7 @@ LayoutItem_SudokuSubSquare::LayoutItem_SudokuSubSquare( Rect<uint16_t> rect, uin
 
 void LayoutItem_SudokuSubSquare::draw( DisplayManager& displayManager )
 {
+    log_d("Drawing %d at (%d,%d,%d,%d)",WhichValue,Location.left,Location.top,Location.right,Location.bottom);
     SudokuSquare& mySquare = CurrentState.GetSquare(CurrentSquare);
     displayManager.fillRect(Location,0);
     if( CurrentState.GetSquare(CurrentSquare).Count() == 9 )

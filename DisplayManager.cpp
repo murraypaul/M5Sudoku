@@ -103,15 +103,15 @@ void DisplayManager::SetLayout( eLayout layout )
             for( uint8_t x = 0 ; x < 3 ; x++ )
                 for( uint8_t y = 0 ; y < 3 ; y++ )
                     LayoutItems.push_back( std::make_shared<LayoutItem_SudokuSubSquare>(
-                        Rect<uint16_t>(offset + border + x*widthOne,border + y*widthOne,offset + border + (x+1)*widthOne,border + (y+1)*widthOne), 1 + y*3 + x) );
+                        Rect<uint16_t>({offset + border + x*widthOne,border + y*widthOne},{widthOne,widthOne}), 1 + y*3 + x) );
             LayoutItems.push_back( std::make_shared<LayoutItem_SudokuGrid>(
                 Rect<uint16_t>(offset + border,border,offset + width - border,width - border), true));
         }
         {
             uint16_t border = 18;
-            uint16_t width = (540 - border) * 2 / 3;
-            uint16_t offsetX = 540-2*border + (960-540-width)/2;
-            uint16_t offsetY = width;
+            uint16_t width = (540) * 2 / 3 + 2*border;
+            uint16_t offsetX = 540-border + (960-540-width)/2;
+            uint16_t offsetY = width - 3*border;
             uint16_t lineHeight = 56;
             uint8_t itemCount = 0;
             uint16_t itemBorder = 9;
@@ -124,8 +124,8 @@ void DisplayManager::SetLayout( eLayout layout )
                 {
                     SudokuState temp = CurrentState;
                     temp.Propagate();
-                    temp.SolveByGuessing();
-                    LastValidation = temp.Valid() ? "Valid" : "Invalid";
+                    uint8_t result = temp.SolveUniquely();
+                    LastValidation = result == 1 ? CurrentState.Solved() ? "Solved!" : "Valid" : result == 2 ? "Non-unique" : "Invalid";
                     BaseDisplayManager.draw(true);
                 })));
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
@@ -193,14 +193,14 @@ void DisplayManager::SetLayout( eLayout layout )
 
         LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect) );
         LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect.shrinkBy({5,5})) );
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,32}),&FreeSansBold24pt7b,TC_DATUM,String("New Game"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10},{CanvasSize.cx-40,64}),&FreeSansBold24pt7b,TC_DATUM,String("New Game"),nullptr) );
 
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,64+32}),&FreeSansBold12pt7b,TC_DATUM,String("Target Clues"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10+64},{CanvasSize.cx-40,64}),&FreeSansBold12pt7b,TC_DATUM,String("Target Clues"),nullptr) );
         {
             uint16_t border = 32;
             uint16_t width = CanvasSize.cx - border*2;
             uint16_t offsetX = border;
-            uint16_t offsetY = 128+16;
+            uint16_t offsetY = 128-8;
             uint16_t itemBorder = 32;
             uint16_t itemWidth = (width - itemBorder*3)/4;
             uint16_t itemHeight = 64;
@@ -234,12 +234,12 @@ void DisplayManager::SetLayout( eLayout layout )
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 28; this->draw(); } )));
         }
 
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(canvasRect.shrinkBy({10,196+32}),&FreeSansBold12pt7b,TC_DATUM,String("Time to Find"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10+128+64},{CanvasSize.cx-40,64}),&FreeSansBold12pt7b,TC_DATUM,String("Time to Find"),nullptr) );
         {
             uint16_t border = 32;
             uint16_t width = CanvasSize.cx - border*2;
             uint16_t offsetX = border;
-            uint16_t offsetY = 256+16;
+            uint16_t offsetY = 256-16;
             uint16_t itemBorder = 32;
             uint16_t itemWidth = (width - itemBorder*3)/4;
             uint16_t itemHeight = 64;
@@ -274,10 +274,21 @@ void DisplayManager::SetLayout( eLayout layout )
         }
 
         LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-            Rect<uint16_t>({CanvasSize.cx - 200,CanvasSize.cy-80},{180, 64})
+            Rect<uint16_t>({CanvasSize.cx - 400,CanvasSize.cy-84},{180, 64})
+            , &FreeSans12pt7b, CC_DATUM
+            , []() -> String { return "Cancel"; }
+            , []() -> bool { return true; } 
+            , std::make_shared<LayoutItemAction_StdFunction>([this]()
+            {
+                this->Cancelled = true;
+                this->ShouldClose = true;
+            })));
+
+        LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
+            Rect<uint16_t>({CanvasSize.cx - 200,CanvasSize.cy-84},{180, 64})
             , &FreeSans12pt7b, CC_DATUM
             , []() -> String { return "Go"; }
-            , []() -> bool { true; } 
+            , []() -> bool { return true; } 
             , std::make_shared<LayoutItemAction_StdFunction>([this]()
             {
                 this->ShouldClose = true;
@@ -437,6 +448,21 @@ void DisplayManager::M5EPD_flushAndUpdateArea( const Rect<uint16_t>& rect, m5epd
 
 void DisplayManager::doLoop( bool enableButtons )
 {
+    //vTaskDelay(1);
+    static uint32_t lastActive = millis();
+    static uint32_t inactivityTimeout = 5 * 60 * 1000;
+
+    auto ts = millis();
+    if( ts > lastActive + inactivityTimeout )
+    {
+        Rect<uint16_t> voltRect = {CanvasSize.cx-60,0,CanvasSize.cx,60};
+        fillRect(voltRect,0);
+        drawString(&FreeSans9pt7b,BL_DATUM,String(M5.getBatteryVoltage()/1000.0), voltRect);
+        M5EPD_flushAndUpdateArea(voltRect,UPDATE_MODE_GC16);
+        doShutdownIfOnBattery();
+        lastActive = ts;
+    }
+
     // Prevent repeated press detection
     static bool wasFingerDown = false;
     static bool wasButtonPressed = false;
@@ -475,6 +501,7 @@ void DisplayManager::doLoop( bool enableButtons )
                 if( f1 != Point<uint16_t>(0,0) && !wasFingerDown )
                 {
                     wasFingerDown = true;
+                    lastActive = millis();
                     switch( numFingers )
                     {
                         case 2:
@@ -549,14 +576,17 @@ void DisplayManager::ShowNewGameDialog()
     }
 
     newGameDlg.clearScreen();
-    newGameDlg.drawString(&FreeSans24pt7b,CC_DATUM,"Please wait...",Rect<uint16_t>({0,0},newGameDlg.CanvasSize));
-    newGameDlg.Canvas.pushCanvas(newGameDlg.CanvasPos.x,newGameDlg.CanvasPos.y,UPDATE_MODE_DU);
+    if( !newGameDlg.Cancelled )
+    {
+        newGameDlg.drawString(&FreeSans24pt7b,CC_DATUM,"Please wait...",Rect<uint16_t>({0,0},newGameDlg.CanvasSize));
+        newGameDlg.Canvas.pushCanvas(newGameDlg.CanvasPos.x,newGameDlg.CanvasPos.y,UPDATE_MODE_DU);
 
-    SudokuState temp;
-    temp.GenerateRandom(TargetFixedCells,TargetSolveTimeMS);
-    CurrentState = temp;
-    LastValidation = "";
-    SudokuState::RemoveSave();
+        SudokuState temp;
+        temp.GenerateRandom(TargetFixedCells,TargetSolveTimeMS);
+        CurrentState = temp;
+        LastValidation = "";
+        SudokuState::RemoveSave();
+    }
 
     Canvas.pushCanvas(CanvasPos.x,CanvasPos.y,UPDATE_MODE_GC16);
     PopupDialogActive = false;
@@ -575,6 +605,8 @@ void DisplayManager::doShutdownIfOnBattery()
 
 void DisplayManager::doShutdown()
 {
+    CurrentState.Save();
+
     Point<uint16_t> windowPoint;
     if( Rotation % 180 == 0 )
         windowPoint = {280,70};

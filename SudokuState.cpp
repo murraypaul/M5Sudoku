@@ -62,7 +62,8 @@ bool SudokuState::PropagateOnce( uint16_t iLoop )
     for( uint8_t x = 0 ; x < 9 ; x++ )
         for( uint8_t y = 0 ; y < 9 ; y++ )
         {
-            if( !Squares[x][y].Fixed() )
+           //vTaskDelay(1);
+           if( !Squares[x][y].Fixed() )
                 continue;
             uint8_t val = Squares[x][y].FirstPossible();
             for( uint8_t x2 = 0 ; x2 < 9 ; x2++ )
@@ -129,6 +130,7 @@ bool SudokuState::SolveByGuessing( uint8_t depth )
 //    log_d("Attempting to fix (%d,%d)[%s]",point.x,point.y,oldSquare.AsPossibleString().c_str());
     for( uint8_t val = 1 ; val <= 9 ; val++ )
     {
+        //vTaskDelay(1);
         if( Squares[point.x][point.y].Possible(val) )
         {
 //            log_d("Trying %d",val);
@@ -187,6 +189,8 @@ bool SudokuState::Valid() const
 
 bool SudokuState::Solved() const
 {
+    if( !Valid() )
+        return false;
     for( uint8_t x = 0 ; x < 9 ; x++ )
         for( uint8_t y = 0 ; y < 9 ; y++ )
             if( !Squares[x][y].Fixed() )
@@ -227,6 +231,7 @@ Point<uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
     for( uint8_t x = 0 ; x < 9 ; x++ )
         for( uint8_t y = 0 ; y < 9 ; y++ )
         {
+            //vTaskDelay(1);
             uint32_t squareCount = Squares[x][y].Count();
             if( squareCount > 1 && squareCount < count )
             {
@@ -288,6 +293,7 @@ void SudokuState::FixOneSquare()
         return;
     while( true )
     {
+        //vTaskDelay(1);
         uint8_t square = random(0,81);
         uint8_t x = square/9;
         uint8_t y = square%9;
@@ -403,6 +409,7 @@ void SudokuState::GenerateRandom( uint8_t targetFixedCells, uint32_t targetSolve
         SudokuState temp;
         for( uint8_t square : vector_rand81 )
         {
+            //vTaskDelay(1);
             if( temp.Solved() )
                 break;
 
@@ -427,7 +434,7 @@ void SudokuState::GenerateRandom( uint8_t targetFixedCells, uint32_t targetSolve
             }
         }
     }
-    log_d("Solved state (%c,%c)",current.Valid()?'Y':'N',current.Solved()?'Y':'N');
+    log_d("Solved state (%c,%c) in %d",current.Valid()?'Y':'N',current.Solved()?'Y':'N',millis()-ts);
     current.Dump();
 
     uint16_t outerloop = 0;
@@ -441,6 +448,7 @@ void SudokuState::GenerateRandom( uint8_t targetFixedCells, uint32_t targetSolve
         log_d("Current has %d fixed squares", current.CountFixed());
         for( uint8_t square : vector_rand81 )
         {
+            //vTaskDelay(1);
             if( current.CountFixed() <= targetFixedCells )
                 break;
 
@@ -471,16 +479,26 @@ void SudokuState::GenerateRandom( uint8_t targetFixedCells, uint32_t targetSolve
         }
     }
     current = lastResult;
-    log_d("Complete (%c,%d fixed squares)", current.Valid()?'Y':'N', current.CountFixed());
+    log_d("Complete (%c,%d fixed squares), total time %d", current.Valid()?'Y':'N', current.CountFixed(), millis()-ts);
     if( current.Valid() )
         (*this) = current;
     else
         (*this) = solved;
+
+    // Verify solution
+//    {
+//        SudokuState temp = *this;
+//        temp.Propagate();
+//        auto result = temp.SolveUniquely();
+//        log_d("Validation: %d",result);
+//    }
 }
 #endif
 
 uint8_t SudokuState::SolveUniquely( uint8_t depth, uint8_t x, uint8_t y, uint8_t count )
 {
+loop:
+    //vTaskDelay(1);
     if( x >= 9 )
     {
         x = 0;
@@ -492,19 +510,52 @@ uint8_t SudokuState::SolveUniquely( uint8_t depth, uint8_t x, uint8_t y, uint8_t
     SudokuSquare& thisSquare = Squares[x][y];
     SudokuSquare oldSquare = thisSquare;
     if( thisSquare.Fixed() )
-        return SolveUniquely(depth,x+1,y,count);
+    {
+        x++;
+        goto loop;
+    }
     for( uint8_t val = 1 ; val <= 9 && count < 2 ; val++ )
     {
+        //vTaskDelay(1);
         thisSquare = oldSquare;
-        if( thisSquare.Possible(val) )
+        if( CheckPossible(x,y,val) )
         {
             thisSquare.SetSolution(val);
-            count = SolveUniquely(depth,x+1,y,count);
+            count = SolveUniquely(depth-1,x+1,y,count);
         }
 
     }
     thisSquare = oldSquare;
     return count;
+}
+
+bool SudokuState::CheckPossible(uint8_t x, uint8_t y, uint8_t val) const
+{
+    for( uint8_t x2 = 0 ; x2 < 9 ; x2++ )
+    {
+        if( x2 == x )
+            continue;
+        if( Squares[x2][y].Fixed() && Squares[x2][y].FirstPossible() == val )
+            return false;
+    }
+    for( uint8_t y2 = 0 ; y2 < 9 ; y2++ )
+    {
+        if( y2 == y )
+            continue;
+        if( Squares[x][y2].Fixed() && Squares[x][y2].FirstPossible() == val )
+            return false;
+    }
+    uint8_t blockx = x/3;
+    uint8_t blocky = y/3;
+    for( uint8_t x2 = blockx * 3 ; x2 < (blockx+1) * 3 ; x2++ )
+        for( uint8_t y2 = blocky * 3 ; y2 < (blocky+1) * 3 ; y2++ )
+        {
+            if( x2 == x && y2 == y )
+                continue;
+            if( Squares[x2][y2].Fixed() && Squares[x2][y2].FirstPossible() == val )
+                return false;
+        }      
+    return true;
 }
 
 void SudokuState::Load()

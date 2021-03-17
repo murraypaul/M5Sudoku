@@ -11,8 +11,9 @@ public:
     SudokuState() = default;
 
 protected:
-    std::array<std::array<SudokuSquare,9>,9>     Squares;
-    constexpr static uint8_t maxDepth = 10;
+    using tdSquares = std::array<std::array<SudokuSquare,9>,9>;
+    tdSquares       Squares;
+    constexpr static uint8_t maxDepth = 64;
     static bool     hasSave;
 
 public:
@@ -30,6 +31,7 @@ public:
     bool            Solved() const;
     uint16_t        SumCount() const;
     uint8_t         CountFixed() const;
+    bool            CheckPossible(uint8_t x, uint8_t y, uint8_t val) const;
 
     Point<uint8_t>  FindLowestCountUnsolvedSquare() const;
     void            FixOneSquare();
