@@ -26,8 +26,8 @@ template <class T> struct Size {
 
 template<class T> struct Rect {
   T left;
-  T right;
   T top;
+  T right;
   T bottom;
 
   Rect(): left(T{}), top(T{}), right(T{}), bottom(T{}) {};
