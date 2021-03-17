@@ -103,7 +103,7 @@ void DisplayManager::SetLayout( eLayout layout )
             for( uint8_t x = 0 ; x < 3 ; x++ )
                 for( uint8_t y = 0 ; y < 3 ; y++ )
                     LayoutItems.push_back( std::make_shared<LayoutItem_SudokuSubSquare>(
-                        Rect<uint16_t>({offset + border + x*widthOne,border + y*widthOne},{widthOne,widthOne}), 1 + y*3 + x) );
+                        Rect<uint16_t>(Point<uint16_t>(offset + border + x*widthOne,border + y*widthOne),Size<uint16_t>(widthOne,widthOne)), 1 + y*3 + x) );
             LayoutItems.push_back( std::make_shared<LayoutItem_SudokuGrid>(
                 Rect<uint16_t>(offset + border,border,offset + width - border,width - border), true));
         }
@@ -116,7 +116,7 @@ void DisplayManager::SetLayout( eLayout layout )
             uint8_t itemCount = 0;
             uint16_t itemBorder = 9;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(1*width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "Validate"; }
                 , []() -> bool { return true; } 
@@ -129,14 +129,14 @@ void DisplayManager::SetLayout( eLayout layout )
                     BaseDisplayManager.draw(true);
                 })));
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX+1*width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX+1*width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(1*width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return LastValidation; }
                 , []() -> bool { return false; } 
                 , nullptr));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(1*width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "New Game"; }
                 , []() -> bool { return true; } 
@@ -145,7 +145,7 @@ void DisplayManager::SetLayout( eLayout layout )
                     this->ShowNewGameDialog();
                 })));
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{1*width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(1*width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return !CurrentState.Solved() ? "Clue" : ""; }
                 , []() -> bool { return !CurrentState.Solved() ? true : false; } 
@@ -157,7 +157,7 @@ void DisplayManager::SetLayout( eLayout layout )
                 })));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)},{width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX+width/2 + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "Save"; }
                 , []() -> bool { return true; } 
@@ -167,7 +167,7 @@ void DisplayManager::SetLayout( eLayout layout )
                     BaseDisplayManager.draw();
                 })));
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)},{width/2 - border,lineHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + border,offsetY + itemCount*(lineHeight + itemBorder)),Size<uint16_t>(width/2 - border,lineHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return SudokuState::HasSave() ? "Load" : ""; }
                 , []() -> bool { return SudokuState::HasSave() ? true : false; } 
@@ -193,9 +193,9 @@ void DisplayManager::SetLayout( eLayout layout )
 
         LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect) );
         LayoutItems.push_back( std::make_shared<LayoutItem_Rectangle>(canvasRect.shrinkBy({5,5})) );
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10},{CanvasSize.cx-40,64}),&FreeSansBold24pt7b,TC_DATUM,String("New Game"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>(Point<uint16_t>(20,10),Size<uint16_t>(CanvasSize.cx-40,64)),&FreeSansBold24pt7b,TC_DATUM,String("New Game"),nullptr) );
 
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10+64},{CanvasSize.cx-40,64}),&FreeSansBold12pt7b,TC_DATUM,String("Target Clues"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>(Point<uint16_t>(20,10+64),Size<uint16_t>(CanvasSize.cx-40,64)),&FreeSansBold12pt7b,TC_DATUM,String("Target Clues"),nullptr) );
         {
             uint16_t border = 32;
             uint16_t width = CanvasSize.cx - border*2;
@@ -206,35 +206,35 @@ void DisplayManager::SetLayout( eLayout layout )
             uint16_t itemHeight = 64;
             uint16_t itemCount = 0;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "22"; }
                 , []() -> bool { return TargetFixedCells == 22; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 22; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "24"; }
                 , []() -> bool { return TargetFixedCells == 24; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 24; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "26"; }
                 , []() -> bool { return TargetFixedCells == 26; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 26; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "28"; }
                 , []() -> bool { return TargetFixedCells == 28; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetFixedCells = 28; this->draw(); } )));
         }
 
-        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>({20,10+128+64},{CanvasSize.cx-40,64}),&FreeSansBold12pt7b,TC_DATUM,String("Time to Find"),nullptr) );
+        LayoutItems.push_back( std::make_shared<LayoutItem_StaticText>(Rect<uint16_t>(Point<uint16_t>(20,10+128+64),Size<uint16_t>(CanvasSize.cx-40,64)),&FreeSansBold12pt7b,TC_DATUM,String("Time to Find"),nullptr) );
         {
             uint16_t border = 32;
             uint16_t width = CanvasSize.cx - border*2;
@@ -245,28 +245,28 @@ void DisplayManager::SetLayout( eLayout layout )
             uint16_t itemHeight = 64;
             uint16_t itemCount = 0;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "30s"; }
                 , []() -> bool { return TargetSolveTimeMS == 30*1000; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 30*1000; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "60s"; }
                 , []() -> bool { return TargetSolveTimeMS == 60*1000; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 60*1000; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "90s"; }
                 , []() -> bool { return TargetSolveTimeMS == 90*1000; } 
                 , std::make_shared<LayoutItemAction_StdFunction>([this]() { TargetSolveTimeMS = 90*1000; this->draw(); } )));
             itemCount++;
             LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-                Rect<uint16_t>({offsetX + itemCount*(itemWidth+itemBorder),offsetY},{itemWidth,itemHeight})
+                Rect<uint16_t>(Point<uint16_t>(offsetX + itemCount*(itemWidth+itemBorder),offsetY),Size<uint16_t>(itemWidth,itemHeight))
                 , &FreeSans12pt7b, CC_DATUM
                 , []() -> String { return "120s"; }
                 , []() -> bool { return TargetSolveTimeMS == 120*1000; } 
@@ -274,7 +274,7 @@ void DisplayManager::SetLayout( eLayout layout )
         }
 
         LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-            Rect<uint16_t>({CanvasSize.cx - 400,CanvasSize.cy-84},{180, 64})
+            Rect<uint16_t>(Point<uint16_t>(CanvasSize.cx - 400,CanvasSize.cy-84),Size<uint16_t>(180, 64))
             , &FreeSans12pt7b, CC_DATUM
             , []() -> String { return "Cancel"; }
             , []() -> bool { return true; } 
@@ -285,7 +285,7 @@ void DisplayManager::SetLayout( eLayout layout )
             })));
 
         LayoutItems.push_back( std::make_shared<LayoutItem_DynamicText>(
-            Rect<uint16_t>({CanvasSize.cx - 200,CanvasSize.cy-84},{180, 64})
+            Rect<uint16_t>(Point<uint16_t>(CanvasSize.cx - 200,CanvasSize.cy-84),Size<uint16_t>(180, 64))
             , &FreeSans12pt7b, CC_DATUM
             , []() -> String { return "Go"; }
             , []() -> bool { return true; } 
@@ -455,7 +455,7 @@ void DisplayManager::doLoop( bool enableButtons )
     auto ts = millis();
     if( ts > lastActive + inactivityTimeout )
     {
-        Rect<uint16_t> voltRect = {CanvasSize.cx-60,0,CanvasSize.cx,60};
+        Rect<uint16_t> voltRect(CanvasSize.cx-60,0,CanvasSize.cx,60);
         fillRect(voltRect,0);
         drawString(&FreeSans9pt7b,BL_DATUM,String(M5.getBatteryVoltage()/1000.0), voltRect);
         M5EPD_flushAndUpdateArea(voltRect,UPDATE_MODE_GC16);
@@ -465,7 +465,7 @@ void DisplayManager::doLoop( bool enableButtons )
 
     // Prevent repeated press detection
     static bool wasFingerDown = false;
-    static bool wasButtonPressed = false;
+//    static bool wasButtonPressed = false;
 
     M5.update();
 //    if (enableButtons && !wasButtonPressed && M5.BtnL.wasPressed()) {
@@ -485,15 +485,15 @@ void DisplayManager::doLoop( bool enableButtons )
 //    }
 //    else
     {
-        if( enableButtons )
-            wasButtonPressed = false;
+//        if( enableButtons )
+//            wasButtonPressed = false;
         if( M5.TP.avaliable() )
         {
             if( !M5.TP.isFingerUp() )
             {
                 M5.TP.update();
                 Point<uint16_t> f1 = {M5.TP.readFingerX(0), M5.TP.readFingerY(0)};
-                Point<uint16_t> f2 = {M5.TP.readFingerX(1), M5.TP.readFingerY(1)};
+//                Point<uint16_t> f2 = {M5.TP.readFingerX(1), M5.TP.readFingerY(1)};
                 auto numFingers = M5.TP.getFingerNum();
     //            delay(100);
                 M5.TP.flush();
@@ -578,7 +578,7 @@ void DisplayManager::ShowNewGameDialog()
     newGameDlg.clearScreen();
     if( !newGameDlg.Cancelled )
     {
-        newGameDlg.drawString(&FreeSans24pt7b,CC_DATUM,"Please wait...",Rect<uint16_t>({0,0},newGameDlg.CanvasSize));
+        newGameDlg.drawString(&FreeSans24pt7b,CC_DATUM,"Please wait...",Rect<uint16_t>(Point<uint16_t>(0,0),newGameDlg.CanvasSize));
         newGameDlg.Canvas.pushCanvas(newGameDlg.CanvasPos.x,newGameDlg.CanvasPos.y,UPDATE_MODE_DU);
 
         SudokuState temp;

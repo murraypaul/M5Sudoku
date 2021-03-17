@@ -9,8 +9,8 @@ template <class T> struct Point {
 
     bool operator==( const Point<T>& other ) const { return x == other.x && y == other.y; };
     bool operator!=( const Point<T>& other ) const { return !(*this  == other); };
-    Point<T> operator+( const Point<T>& other ) const { return {x+other.x,y+other.y}; };
-    Point<T> operator-( const Point<T>& other ) const { return {x-other.x,y-other.y}; };
+    Point<T> operator+( const Point<T>& other ) const { return Point<T>(x+other.x,y+other.y); };
+    Point<T> operator-( const Point<T>& other ) const { return Point<T>(x-other.x,y-other.y); };
 };
 
 template <class T> struct Size {
@@ -26,8 +26,8 @@ template <class T> struct Size {
 
 template<class T> struct Rect {
   T left;
-  T right;
   T top;
+  T right;
   T bottom;
 
   Rect(): left(T{}), top(T{}), right(T{}), bottom(T{}) {};
@@ -39,23 +39,23 @@ template<class T> struct Rect {
 
   Rect<T>   outersect( const Rect<T>& other ) const
   {
-      return {min(left,other.left), min(top,other.top), max(right,other.right), max(bottom,other.bottom)};
+      return Rect<T>(min(left,other.left), min(top,other.top), max(right,other.right), max(bottom,other.bottom));
   }
   Rect<T>   scaleBy( double x, double y ) const
   {
-      return {left,top,left+width()*x,top+height()*y};
+      return Rect<T>(left,top,left+width()*x,top+height()*y);
   }
   Rect<T>   shrinkBy( const Size<T>& sz ) const
   {
-      return {left+sz.cx,top+sz.cy,right-2*sz.cx,bottom-2*sz.cy};
+      return Rect<T>(left+sz.cx,top+sz.cy,right-2*sz.cx,bottom-2*sz.cy);
   }
   Rect<T>   shrinkBy( T x, T y ) const
   {
-      return {left+x,top+y,right-2*x,bottom-2*y};
+      return Rect<T>(left+x,top+y,right-2*x,bottom-2*y);
   }
   Rect<T>   add( const Point<T>& pt )
   {
-      return {left+pt.x,top+pt.y,right+pt.x,bottom+pt.y};
+      return Rect<T>(left+pt.x,top+pt.y,right+pt.x,bottom+pt.y);
   }
   bool      contains( const Point<T>& pt ) const
   {

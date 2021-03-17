@@ -110,10 +110,6 @@ bool SudokuState::PropagateOnce( uint16_t iLoop )
     return bChangeMade;
 }
 
-bool SudokuState::SolveByIdentifingUniques()
-{
-}
-
 bool SudokuState::SolveByGuessing( uint8_t depth )
 {
     if( Solved() )
@@ -121,12 +117,11 @@ bool SudokuState::SolveByGuessing( uint8_t depth )
     // Avoid stack overflow issues
     if( depth <= 0 )
         return false;
-    bool bAnyChangeMade = false;
     auto point = FindLowestCountUnsolvedSquare();
     if( point.x == -1 )
         return false;
     auto oldState = Squares;
-    SudokuSquare oldSquare = Squares[point.x][point.y];
+//    SudokuSquare oldSquare = Squares[point.x][point.y];
 //    log_d("Attempting to fix (%d,%d)[%s]",point.x,point.y,oldSquare.AsPossibleString().c_str());
     for( uint8_t val = 1 ; val <= 9 ; val++ )
     {
@@ -219,17 +214,17 @@ uint16_t SudokuState::SumCount() const
     return count;
 }
 
-Point<uint8_t> SudokuState::FindLowestCountUnsolvedSquare() const
+Point<int8_t> SudokuState::FindLowestCountUnsolvedSquare() const
 {
     if( !Valid() )
         return {-1,-1};
     if( Solved() )
         return {-1,-1};
 
-    Point<uint8_t> point;
+    Point<int8_t> point;
     uint8_t count = 10;
-    for( uint8_t x = 0 ; x < 9 ; x++ )
-        for( uint8_t y = 0 ; y < 9 ; y++ )
+    for( int8_t x = 0 ; x < 9 ; x++ )
+        for( int8_t y = 0 ; y < 9 ; y++ )
         {
             //vTaskDelay(1);
             uint32_t squareCount = Squares[x][y].Count();

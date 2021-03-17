@@ -23,7 +23,6 @@ public:
 
     bool            Propagate();        // returns true if any changes were made
     bool            PropagateOnce( uint16_t iLoop = 0 ); // returns true if a change was made
-    bool            SolveByIdentifingUniques();  // returns true if solved
     bool            SolveByGuessing( uint8_t depth = maxDepth );  // returns true if solved
     uint8_t         SolveUniquely( uint8_t depth = maxDepth, uint8_t x = 0, uint8_t y = 0, uint8_t count = 0 );  // returns 0 if unsolved, 1 if unique solution found or 2 if more than one solution found
 
@@ -33,7 +32,7 @@ public:
     uint8_t         CountFixed() const;
     bool            CheckPossible(uint8_t x, uint8_t y, uint8_t val) const;
 
-    Point<uint8_t>  FindLowestCountUnsolvedSquare() const;
+    Point<int8_t>  FindLowestCountUnsolvedSquare() const;
     void            FixOneSquare();
 
     SudokuSquare&   GetSquare( Point<uint8_t> pt ) { return GetSquare(pt.x,pt.y); };

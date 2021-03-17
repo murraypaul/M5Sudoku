@@ -153,7 +153,7 @@ void LayoutItem_SudokuSquare::draw( DisplayManager& displayManager )
             for( uint8_t y = 0 ; y < 3 ; y++ )
                 if( mySquare.Possible(y*3+x+1) )
                     displayManager.drawString(&FreeSans9pt7b,CC_DATUM,String(y*3+x+1)
-                    ,Rect<uint16_t>{Location.left+x*width,Location.top+y*height,Location.left+(x+1)*width,Location.top+(y+1)*height});
+                    ,Rect<uint16_t>(Location.left+x*width,Location.top+y*height,Location.left+(x+1)*width,Location.top+(y+1)*height));
     }
     if( WhichSquare == CurrentSquare )
         displayManager.GetCanvas().setTextColor(15);
@@ -220,12 +220,12 @@ void LayoutItem_SudokuGrid::draw( DisplayManager& displayManager )
     uint16_t height = Location.height()/numSquares;
     for( int y = 0 ; y <= numSquares ; y++ )
         if( y % 3 == 0 )
-            displayManager.fillRect({Location.left-3,Location.top + height*y -3,Location.right+3,Location.top + height*y +3},15);
+            displayManager.fillRect(Rect<uint16_t>(Location.left-3,Location.top + height*y -3,Location.right+3,Location.top + height*y +3),15);
         else
-            displayManager.fillRect({Location.left-1,Location.top + height*y -1,Location.right+1,Location.top + height*y +1},15);
+            displayManager.fillRect(Rect<uint16_t>(Location.left-1,Location.top + height*y -1,Location.right+1,Location.top + height*y +1),15);
     for( int x = 0 ; x <= numSquares ; x++ )
         if( x % 3 == 0 )
-            displayManager.fillRect({Location.left + width*x -3,Location.top-3,Location.left + width*x +3,Location.bottom+3},15);
+            displayManager.fillRect(Rect<uint16_t>(Location.left + width*x -3,Location.top-3,Location.left + width*x +3,Location.bottom+3),15);
         else
-            displayManager.fillRect({Location.left + width*x -1,Location.top-1,Location.left + width*x +1,Location.bottom+1},15);
+            displayManager.fillRect(Rect<uint16_t>(Location.left + width*x -1,Location.top-1,Location.left + width*x +1,Location.bottom+1),15);
 };
