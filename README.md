@@ -11,6 +11,8 @@ Can save and reload current state to EEPROM.
 
 Will automatically shutdown and save state after 5 minutes of inactivity.
 
+![179823](https://user-images.githubusercontent.com/4366824/111460959-88d9c180-8714-11eb-9f1c-12aa16e35a34.png)
+
 Notes:
 - Selecting a square in the large grid will display it in the small grid on the right 
 - The selected square is highlighted in the large grid
